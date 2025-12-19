@@ -53,6 +53,46 @@ void ProcessUserEvent(const char * controlName, bool isDown, int deviceType, UIn
     }
 }
 
+/**
+ * Trigger neutral F4 response dialog that will result in skipping player or NPC talking if
+ * the dialog options are not shown yet.
+ */
+void ProcessSkipDialog()
+{
+    if (!(*G::ui)->IsMenuOpen("DialogueMenu")) {
+        return;
+    }
+    BSFixedString mainMenuStr("DialogueMenu");
+    const auto menu = (*G::ui)->GetMenu(mainMenuStr);
+    const auto movieRoot = menu->movie->movieRoot;
+    if (!movieRoot->Invoke("root.Menu_mc.onNeutralRelease", nullptr, nullptr, 0)) {
+        _WARNING("Calling Menu_mc.onNeutralRelease failed");
+    }
+}
+
+/**
+ * Is the dialog is currently in a waiting for player to pick a dialog option OR is either the player or
+ * the NPC is talking.
+ * Identify by checking the dialog alpha, if it's 1 then it's shown and waiting for player.
+ * Allows player input to skip dialog while NPC is talking before starting with all the options
+ */
+bool IsDialogWaitingForPlayerInput()
+{
+    if (!(*G::ui)->IsMenuOpen("DialogueMenu")) {
+        return false;
+    }
+    BSFixedString mainMenuStr("DialogueMenu");
+    const auto menu = (*G::ui)->GetMenu(mainMenuStr);
+    const auto movieRoot = menu->movie->movieRoot;
+
+    GFxValue var;
+    if (movieRoot->GetVariable(&var, "root.List_mc.alpha")) {
+        return var.IsNumber() && var.GetNumber() > 0.5;
+    }
+    _WARNING("Calling GetVariable(root.List_mc.alpha) failed");
+    return false;
+}
+
 class F4SEInputHandler : public BSInputEventUser
 {
 public:
@@ -110,7 +150,12 @@ public:
         BSFixedString* control = inputEvent->GetControlID();
 
         if (isDown) {
-            ProcessUserEvent(control->c_str(), true, deviceType, keyCode);
+            if (strcmp(control->c_str(), "WandTrigger") == 0 && !IsDialogWaitingForPlayerInput()) {
+                // trigger used to skip dialog while someone is talking
+                ProcessSkipDialog();
+            } else {
+                ProcessUserEvent(control->c_str(), true, deviceType, keyCode);
+            }
         }
         else if (isUp) {
             // Sending up event causes dialog skip in VR because the swf file does it specifically for trigger, don't know why it was done so
