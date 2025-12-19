@@ -113,7 +113,8 @@ public:
             ProcessUserEvent(control->c_str(), true, deviceType, keyCode);
         }
         else if (isUp) {
-            ProcessUserEvent(control->c_str(), false, deviceType, keyCode);
+            // Sending up event causes dialog skip in VR because the swf file does it specifically for trigger, don't know why it was done so
+            // ProcessUserEvent(control->c_str(), false, deviceType, keyCode);
         }
     }
 };
