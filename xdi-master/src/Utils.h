@@ -27,4 +27,12 @@ namespace Utils {
         g_branchTrampoline.Write5Call(hookTarget, (uintptr_t)hook);
         return reinterpret_cast<T>(hookTarget + instructionLength + rel32); // return original address
     }
+
+    inline uint64_t nowMillis()
+    {
+        const auto now = std::chrono::system_clock::now();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()
+        ).count();
+    }
 }
