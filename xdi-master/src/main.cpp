@@ -126,6 +126,33 @@ bool IsDialogWaitingForPlayerInput()
     return false;
 }
 
+// The VR dialogue options, read once per dialogue by RefreshDialogState() below.
+bool g_rotationEnabled = true;
+bool g_exitByGripEnabled = true;
+
+/**
+ * Is the dialogue menu open, re-reading the VR options as it opens and dropping a turn still in flight as it
+ * closes. Reading the options here rather than per event keeps it to one file read per dialogue, and MCM can
+ * only change them between dialogues anyway. Call it from every input event so that whichever input comes
+ * first after a dialogue opens picks the change up.
+ */
+bool RefreshDialogState()
+{
+    static bool s_dialogOpen = false;
+
+    const bool dialogOpen = (*G::ui)->IsMenuOpen("DialogueMenu");
+    if (dialogOpen != s_dialogOpen) {
+        s_dialogOpen = dialogOpen;
+        PlayerRotation::Cancel();
+        if (dialogOpen) {
+            g_rotationEnabled = Settings::GetBool("bEnableRotation:VR", true);
+            g_exitByGripEnabled = Settings::GetBool("bEnableExitByGrip:VR", true);
+        }
+    }
+
+    return dialogOpen;
+}
+
 /**
  * Turn the player while the dialogue menu is open, which the game itself refuses to do: the vanilla turn runs
  * on a player-controls input handler and dialogue takes the player controls away, while thumbstick events keep
@@ -134,20 +161,7 @@ bool IsDialogWaitingForPlayerInput()
  */
 bool ProcessDialogRotation(ThumbstickEvent* inputEvent)
 {
-    static bool s_dialogOpen = false;
-    static bool s_rotationEnabled = false;
-
-    const bool dialogOpen = (*G::ui)->IsMenuOpen("DialogueMenu");
-    if (dialogOpen != s_dialogOpen) {
-        s_dialogOpen = dialogOpen;
-        PlayerRotation::Cancel();
-        if (dialogOpen) {
-            // Read once per dialogue rather than per event: it's a file read, and MCM can change it in between.
-            s_rotationEnabled = Settings::GetBool("bEnableRotation:VR", true);
-        }
-    }
-
-    return dialogOpen && s_rotationEnabled
+    return RefreshDialogState() && g_rotationEnabled
         ? PlayerRotation::TurnByThumbstick(inputEvent->direction, inputEvent->previousDirection)
         : false;
 }
@@ -217,11 +231,16 @@ public:
 
         BSFixedString* control = inputEvent->GetControlID();
 
+        // Keeps the VR options current for a dialogue that opened since the last input event.
+        RefreshDialogState();
+
         if (isDown) {
             if (strcmp(control->c_str(), "WandGrip") == 0 || (deviceType == 4 && keyMask == 34)) {
-                // grip used to exit dialog
-                _MESSAGE("Exit dialog by grip");
-                s_exitDialogReuqetStartTimeMillis = Utils::nowMillis();
+                if (g_exitByGripEnabled) {
+                    // grip used to exit dialog
+                    _MESSAGE("Exit dialog by grip");
+                    s_exitDialogReuqetStartTimeMillis = Utils::nowMillis();
+                }
             } else if (strcmp(control->c_str(), "WandTrigger") == 0 && !IsDialogWaitingForPlayerInput()) {
                 // trigger used to skip dialog while someone is talking
                 _MESSAGE("Skip dialog line by trigger");

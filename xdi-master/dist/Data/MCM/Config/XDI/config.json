@@ -132,6 +132,15 @@
       "valueOptions": {
         "sourceType": "ModSettingBool"
       }
+    },
+    {
+      "id": "bEnableExitByGrip:VR",
+      "text": "Allow exiting dialogue with grip button",
+      "type": "switcher",
+      "help": "Press the grip button to leave a conversation without having to walk away from the NPC. Default: ON",
+      "valueOptions": {
+        "sourceType": "ModSettingBool"
+      }
     }
   ]
 }
