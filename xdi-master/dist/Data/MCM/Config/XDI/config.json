@@ -11,7 +11,7 @@
     },
     {
       "type": "spacer",
-	  "numLines":1
+      "numLines": 1
     },
     {
       "text": "Dialogue Menu Options",
@@ -115,6 +115,20 @@
       "text": "Show shaded background",
       "type": "switcher",
       "help": "Controls whether a shaded background is used for the dialogue menu. Default: ON",
+      "valueOptions": {
+        "sourceType": "ModSettingBool"
+      }
+    },
+    { "type": "spacer" },
+    {
+      "text": "VR Options",
+      "type": "section"
+    },
+    {
+      "id": "bEnableRotation:VR",
+      "text": "Allow player to turn in dialogue",
+      "type": "switcher",
+      "help": "Turn left and right with the dialogue thumbstick while the dialogue menu is open, which the game itself blocks. Default: ON",
       "valueOptions": {
         "sourceType": "ModSettingBool"
       }

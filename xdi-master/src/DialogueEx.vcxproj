@@ -16,6 +16,7 @@
     <ClCompile Include="Globals.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Papyrus.cpp" />
+    <ClCompile Include="PlayerRotation.cpp" />
     <ClCompile Include="rva\sscan\Pattern.cpp" />
     <ClCompile Include="Scaleform.cpp" />
     <ClCompile Include="Settings.cpp" />
@@ -29,6 +30,7 @@
     <ClInclude Include="GameUtils.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="Papyrus.h" />
+    <ClInclude Include="PlayerRotation.h" />
     <ClInclude Include="rva\RVA.h" />
     <ClInclude Include="rva\sscan\Pattern.h" />
     <ClInclude Include="Scaleform.h" />

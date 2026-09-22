@@ -19,6 +19,8 @@
 #include "Scaleform.h"
 #include "Papyrus.h"
 #include "DialogueEx.h"
+#include "PlayerRotation.h"
+#include "Settings.h"
 #include "Utils.h"
 #include "f4se/GameMenus.h"
 
@@ -56,6 +58,11 @@ uint64_t s_exitDialogReuqetStartTimeMillis = 0;
  */
 float OnBGSScene_GetMaxDialogueDistanceRaw_Hook(BGSScene* scene)
 {
+    // The game calls this throughout a running dialogue, which is the closest thing to a per-frame tick this
+    // plugin has: a smoothed snap started by a thumbstick flick has to keep advancing after the player lets
+    // the stick go, and no more thumbstick events arrive then. Costs nothing when no snap is in flight.
+    PlayerRotation::OnFrameUpdate();
+
     if (s_exitDialogReuqetStartTimeMillis > 0 && Utils::nowMillis() - s_exitDialogReuqetStartTimeMillis < 400) {
         return 25;
     }
@@ -119,6 +126,32 @@ bool IsDialogWaitingForPlayerInput()
     return false;
 }
 
+/**
+ * Turn the player while the dialogue menu is open, which the game itself refuses to do: the vanilla turn runs
+ * on a player-controls input handler and dialogue takes the player controls away, while thumbstick events keep
+ * reaching this menu-controls handler. Turning follows the player's own VR comfort settings, see PlayerRotation.
+ * Returns true if the flick was used to turn, so it isn't sent to the dialogue menu as a navigation event too.
+ */
+bool ProcessDialogRotation(ThumbstickEvent* inputEvent)
+{
+    static bool s_dialogOpen = false;
+    static bool s_rotationEnabled = false;
+
+    const bool dialogOpen = (*G::ui)->IsMenuOpen("DialogueMenu");
+    if (dialogOpen != s_dialogOpen) {
+        s_dialogOpen = dialogOpen;
+        PlayerRotation::Cancel();
+        if (dialogOpen) {
+            // Read once per dialogue rather than per event: it's a file read, and MCM can change it in between.
+            s_rotationEnabled = Settings::GetBool("bEnableRotation:VR", true);
+        }
+    }
+
+    return dialogOpen && s_rotationEnabled
+        ? PlayerRotation::TurnByThumbstick(inputEvent->direction, inputEvent->previousDirection)
+        : false;
+}
+
 class F4SEInputHandler : public BSInputEventUser
 {
 public:
@@ -126,7 +159,16 @@ public:
 
     virtual void OnThumbstickEvent(ThumbstickEvent * inputEvent)
     {
-        if (inputEvent->stick == 0xC && inputEvent->previousDirection != inputEvent->direction)
+        if (inputEvent->stick != 0xC) {
+            return;
+        }
+
+        if (ProcessDialogRotation(inputEvent)) {
+            // Left/right turned the player, so don't also move the dialogue selection with it.
+            return;
+        }
+
+        if (inputEvent->previousDirection != inputEvent->direction)
         {
             _MESSAGE("OnThumbstickEvent move %i", inputEvent->direction);
             switch (inputEvent->direction)
