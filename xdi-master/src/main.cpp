@@ -19,6 +19,7 @@
 #include "Scaleform.h"
 #include "Papyrus.h"
 #include "DialogueEx.h"
+#include "DialogueMenuPlacement.h"
 #include "PlayerRotation.h"
 #include "Settings.h"
 #include "Utils.h"
@@ -452,7 +453,10 @@ bool F4SEPlugin_Load(const F4SEInterface *f4se)
     }
 
     // end of max dialog distance
-    
+
+    // Keep the dialogue UI facing the NPC being talked to
+    DialogueMenuPlacement::Init();
+
     #if DEBUG
         Debug::Init();
     #endif

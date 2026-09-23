@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DialogueEx.cpp" />
+    <ClCompile Include="DialogueMenuPlacement.cpp" />
     <ClCompile Include="GameUtils.cpp" />
     <ClCompile Include="Globals.cpp" />
     <ClCompile Include="main.cpp" />
@@ -25,6 +26,7 @@
   <ItemGroup>
     <ClInclude Include="Config.h" />
     <ClInclude Include="DialogueEx.h" />
+    <ClInclude Include="DialogueMenuPlacement.h" />
     <ClInclude Include="ExtraEvents.h" />
     <ClInclude Include="ExtraTypes.h" />
     <ClInclude Include="GameUtils.h" />

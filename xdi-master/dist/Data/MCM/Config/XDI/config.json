@@ -141,6 +141,15 @@
       "valueOptions": {
         "sourceType": "ModSettingBool"
       }
+    },
+    {
+      "id": "bEnableDialogueUIFacingNpc:VR",
+      "text": "Keep dialogue UI towards the NPC",
+      "type": "switcher",
+      "help": "Keeps the dialogue UI on the line between you and the NPC you are talking to, instead of drifting with head rotation. Default: ON",
+      "valueOptions": {
+        "sourceType": "ModSettingBool"
+      }
     }
   ]
 }
