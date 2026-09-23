@@ -196,6 +196,10 @@ namespace DialogueEx {
     }
     
     // Returns the target of the current player dialogue action, or NULL if no player dialogue action is currently active.
+    // The reference is borrowed, not owned: the handle lookup hands back a counted reference (a locked increment
+    // of the reference's handle refcount) and it is given straight back here. That count is only the low ten bits
+    // of the field (BSHandleRefObject::kMask_RefCount), so a leaked one per call eventually carries into the
+    // handle state kept in the bits above it and corrupts the actor. Callers read from it and drop it.
     TESObjectREFR* GetCurrentPlayerDialogueTarget() {
         if (auto playerDialogue = GetCurrentPlayerDialogueAction()) {
             UInt32          targetHandle = 0;
@@ -206,6 +210,9 @@ namespace DialogueEx {
             }
             if (targetHandle) {
                 LookupREFRByHandle(&targetHandle, &targetRef);
+                if (targetRef) {
+                    targetRef->handleRefObject.DecRefHandle();
+                }
                 return targetRef;
             }
         }
