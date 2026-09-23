@@ -4,8 +4,8 @@
 //-----------------------
 // Plugin Information
 //-----------------------
-#define PLUGIN_VERSION              18
-#define PLUGIN_VERSION_STRING       "1.3.4 VR"
+#define PLUGIN_VERSION              20
+#define PLUGIN_VERSION_STRING       "1.3.6 VR"
 #define PLUGIN_NAME_SHORT           "XDIVR"
 #define PLUGIN_NAME_LONG            "Extended Dialogue Interface VR"
 #define SUPPORTED_RUNTIME_VERSION   CURRENT_RELEASE_RUNTIME
