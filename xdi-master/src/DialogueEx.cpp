@@ -1,6 +1,7 @@
 #include "DialogueEx.h"
 
 #include "Config.h"
+#include "DialogueMenuPlacement.h"
 #include "rva/RVA.h"
 
 #include "Utils.h"
@@ -195,28 +196,44 @@ namespace DialogueEx {
         }
     }
     
-    // Returns the target of the current player dialogue action, or NULL if no player dialogue action is currently active.
-    // The reference is borrowed, not owned: the handle lookup hands back a counted reference (a locked increment
-    // of the reference's handle refcount) and it is given straight back here. That count is only the low ten bits
-    // of the field (BSHandleRefObject::kMask_RefCount), so a leaked one per call eventually carries into the
-    // handle state kept in the bits above it and corrupts the actor. Callers read from it and drop it.
-    TESObjectREFR* GetCurrentPlayerDialogueTarget() {
+    // Returns a handle to the NPC the player is in dialogue with, as the game itself tracks it: MenuTopicManager
+    // keeps it at + 0x14 for the whole conversation and hands it to the reference lookup throughout the dialogue
+    // code. Unlike GetCurrentPlayerDialogueTargetHandle below it answers in every phase of a scene, not only
+    // while a player dialogue action is running. Returns 0 when there is no dialogue.
+    UInt32 GetDialogueTargetHandle() {
+        const MenuTopicManager* topicManager = *g_menuTopicManager;
+        return topicManager ? topicManager->dialogueTargetHandle : 0;
+    }
+
+    // Returns a handle to the target of the current player dialogue action, or 0 if no player dialogue action
+    // is currently active. A handle rather than the reference for callers that hold on to it across frames.
+    UInt32 GetCurrentPlayerDialogueTargetHandle() {
         if (auto playerDialogue = GetCurrentPlayerDialogueAction()) {
             UInt32          targetHandle = 0;
-            TESObjectREFR*  targetRef = nullptr;
             BGSScene* scene = (*G::player)->GetCurrentScene();
             if (scene) {
                 GetQuestAliasHandle(scene->owningQuest, &targetHandle, playerDialogue->aliasID);
             }
-            if (targetHandle) {
-                LookupREFRByHandle(&targetHandle, &targetRef);
-                if (targetRef) {
-                    targetRef->handleRefObject.DecRefHandle();
-                }
-                return targetRef;
+            return targetHandle;
+        }
+        return 0;
+    }
+
+    // Returns the target of the current player dialogue action, or NULL if no player dialogue action is currently active.
+    // The reference is borrowed, not owned: the handle lookup hands back a counted reference (it does a locked
+    // increment of the reference's handle refcount) and it is given straight back here. That count is only the
+    // low ten bits of the field (BSHandleRefObject::kMask_RefCount), so leaking one per call eventually carries
+    // into the handle state kept in the bits above it and corrupts the actor. Callers read from it and drop it.
+    TESObjectREFR* GetCurrentPlayerDialogueTarget() {
+        UInt32          targetHandle = GetCurrentPlayerDialogueTargetHandle();
+        TESObjectREFR*  targetRef = nullptr;
+        if (targetHandle) {
+            LookupREFRByHandle(&targetHandle, &targetRef);
+            if (targetRef) {
+                targetRef->handleRefObject.DecRefHandle();
             }
         }
-        return nullptr;
+        return targetRef;
     }
 
     //-------------------------
@@ -728,6 +745,7 @@ namespace {
     EventResult MenuOpenCloseHandler::ReceiveEvent(MenuOpenCloseEventEx * evn, void * dispatcher) {
         static BSFixedString dialogueMenu("DialogueMenu");
         if (evn->menuName == dialogueMenu) {
+            DialogueMenuPlacement::OnDialogueMenuOpenClose(evn->opening);
             if (evn->opening) {
                 //savedSubtitlePosition = Scaleform::GetSubtitlePosition();
             } else {

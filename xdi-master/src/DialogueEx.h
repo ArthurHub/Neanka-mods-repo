@@ -52,6 +52,7 @@ namespace DialogueEx
     bool SelectDialogueOption(int option);
 
     TESObjectREFR* GetCurrentPlayerDialogueTarget();
+    UInt32 GetDialogueTargetHandle();
 
     // Utilities
     bool IsSceneActionWithinPhase(BGSSceneAction* action, UInt32 phase);
